@@ -1,0 +1,7 @@
+node_modules/
+dist/
+public/models/
+public/runtime/
+test-results/
+playwright-report/
+public/fixtures/

@@ -1,0 +1,77 @@
+name: Standalone local audio benchmark
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    # Safety: this copied workflow must never deploy over the production tracker.
+    if: github.event.repository.name == 'dual-track-transcription-benchmark'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run models
+      - run: node scripts/prepare.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y espeak
+      - run: python3 scripts/fixtures.py
+      - run: npm test
+        env:
+          REAL_MODELS: "1"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-test-results
+          path: test-results
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - uses: actions/deploy-pages@v4
+        id: deployment
+
+  verify-live:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y espeak
+      - run: python3 scripts/fixtures.py
+      - name: Confirm deployed HTTPS page and manifest are available
+        run: |
+          curl --fail --retry 12 --retry-delay 5 --retry-all-errors --output /tmp/benchmark-page.html https://justfreshair4me.github.io/dual-track-transcription-benchmark/
+          curl --fail --retry 12 --retry-delay 5 --retry-all-errors --output /tmp/benchmark-manifest.json https://justfreshair4me.github.io/dual-track-transcription-benchmark/manifest.json
+      - name: Verify live CSS, browser initialization and both local models at 15/30/60 seconds
+        run: npx playwright test tests/real-models.spec.js
+        env:
+          REAL_MODELS: "1"
+          BENCHMARK_URL: https://justfreshair4me.github.io/dual-track-transcription-benchmark/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-browser-results
+          path: test-results

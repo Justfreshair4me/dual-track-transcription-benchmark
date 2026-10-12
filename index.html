@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <title>Local Audio Benchmark</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">ISOLATED EXPERIMENT • CPU / ONE THREAD</p>
+        <h1>Speak once. Test locally.</h1>
+        <p>
+          Transcribe the same saved recording with two small English models.
+          Audio and transcripts stay in this tab.
+        </p>
+      </header>
+      <aside>
+        <strong>No tracker data is accessed.</strong> Nothing is saved
+        automatically. Download your clip before testing: closing this tab or
+        Android reclaiming its memory can lose the clip. Models are kept in
+        memory only.
+      </aside>
+      <section aria-labelledby="models-heading">
+        <h2 id="models-heading">1. Choose and load a model</h2>
+        <label for="model">English model</label
+        ><select id="model">
+          <option value="whisper">Whisper Tiny English · q8</option>
+          <option value="moonshine">Moonshine Tiny · q8</option>
+        </select>
+        <p id="download-size">Checking pinned model sizes…</p>
+        <button id="load" disabled>Load selected model…</button>
+        <p id="model-status" role="status"></p>
+        <progress id="progress" hidden></progress>
+        <details>
+          <summary>Downloads, privacy, and offline limits</summary>
+          <p>
+            Only static model and runtime files are downloaded, from this site's
+            host. The build retrieves pinned originals from Hugging Face's
+            onnx-community repositories. No audio or text is uploaded. No speech
+            service, analytics, account, database, service worker, or persistent
+            model cache is used.
+          </p>
+          <p>
+            After a model has loaded, inference works without internet while
+            this tab stays open. Loading a different model or reopening the site
+            needs internet unless the browser happens to retain its ordinary
+            HTTP cache. Keep this tab visible and the screen awake during tests.
+          </p>
+          <p>
+            CPU execution uses one thread in a separate worker. Memory use can
+            be much larger than download size. Android can kill a tab without
+            giving us a chance to recover it. Chrome and Brave support and speed
+            still need physical-phone testing.
+          </p>
+          <pre id="versions"></pre>
+        </details>
+      </section>
+      <section aria-labelledby="record-heading">
+        <h2 id="record-heading">2. Record one test clip</h2>
+        <label for="duration">Automatic stop after</label
+        ><select id="duration">
+          <option value="15">15 seconds</option>
+          <option value="30">30 seconds</option>
+          <option value="60">60 seconds</option></select
+        ><button id="record" class="microphone" aria-label="Record audio">
+          🎙<span>Record</span>
+        </button>
+        <p id="record-status" role="status">
+          Microphone access requires HTTPS and your permission.
+        </p>
+        <div class="row">
+          <button id="stop" disabled>Stop recording</button
+          ><button id="discard" disabled>Cancel recording</button>
+        </div>
+        <label for="file">Or reuse a downloaded clip (up to 60 seconds)</label
+        ><input
+          id="file"
+          type="file"
+          accept="audio/*,.webm,.wav,.ogg,.mp4,.m4a"
+        />
+        <div id="clip" hidden>
+          <audio id="audio" controls preload="metadata"></audio>
+          <p id="clip-info"></p>
+          <button id="save-audio">Download original audio</button>
+          <p class="muted">
+            Check the file appears in Downloads before running a model.
+          </p>
+        </div>
+      </section>
+      <section>
+        <h2>3. Transcribe the completed clip</h2>
+        <p>
+          The selected model receives decoded audio from the original clip,
+          never a new microphone stream. If a model is already loaded, stopping
+          recording automatically transcribes it. Switch models and run again to
+          compare.
+        </p>
+        <button id="run" disabled>Transcribe this clip locally</button
+        ><button id="cancel" disabled>Cancel processing / unload model</button>
+        <p id="status" role="status" aria-live="polite">
+          Record or choose a clip to begin.
+        </p>
+        <div id="results"></div>
+        <button id="report" disabled>Download local results report</button>
+      </section>
+      <footer>
+        Feasibility benchmark only. Not a change to Dual-Track Life Tracker.
+        Tiny models can miss or invent words, especially in silence. Check every
+        transcript.
+      </footer>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
