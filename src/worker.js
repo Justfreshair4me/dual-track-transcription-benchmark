@@ -1,4 +1,5 @@
 import { pipeline, env } from "@huggingface/transformers";
+import { transcribeComplete } from "./transcribe.js";
 let transcriber, model;
 const nativeFetch = globalThis.fetch.bind(globalThis);
 self.onmessage = async ({ data }) => {
@@ -63,31 +64,33 @@ self.onmessage = async ({ data }) => {
       if (!transcriber) throw new Error("Load a model first.");
       const samples = new Float32Array(data.samples),
         start = performance.now();
-      let text = "";
-      if (model.id === "whisper") {
-        const result = await transcriber(samples, {
-          chunk_length_s: 30,
-          stride_length_s: 5,
-          return_timestamps: false,
+      try {
+        const result = await transcribeComplete(
+          transcriber,
+          model.id,
+          samples,
+          (coverage) =>
+            self.postMessage({
+              type: "progress",
+              progress:
+                (100 * coverage.processedSamples) / coverage.totalSamples,
+              coverage,
+            }),
+        );
+        self.postMessage({
+          type: "result",
+          ...result,
+          milliseconds: performance.now() - start,
         });
-        text = result.text;
-      } else {
-        const length = 15 * 16000;
-        for (let i = 0; i < samples.length; i += length) {
-          const result = await transcriber(samples.subarray(i, i + length));
-          text += (text ? " " : "") + result.text;
-          self.postMessage({
-            type: "progress",
-            progress:
-              (100 * Math.min(i + length, samples.length)) / samples.length,
-          });
-        }
+      } catch (error) {
+        self.postMessage({
+          type: "error",
+          message: String(error.message).slice(0, 300),
+          partialText: error.partialText || "",
+          coverage: error.coverage,
+          milliseconds: performance.now() - start,
+        });
       }
-      self.postMessage({
-        type: "result",
-        text: text.trim(),
-        milliseconds: performance.now() - start,
-      });
     }
   } catch (error) {
     self.postMessage({

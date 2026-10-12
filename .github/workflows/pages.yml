@@ -65,7 +65,7 @@ jobs:
         run: |
           curl --fail --retry 12 --retry-delay 5 --retry-all-errors --output /tmp/benchmark-page.html https://justfreshair4me.github.io/dual-track-transcription-benchmark/
           curl --fail --retry 12 --retry-delay 5 --retry-all-errors --output /tmp/benchmark-manifest.json https://justfreshair4me.github.io/dual-track-transcription-benchmark/manifest.json
-      - name: Verify live CSS, browser initialization and both local models at 15/30/60 seconds
+      - name: Verify live CSS, browser initialization and both local models at 15/30/60/180/300 seconds
         run: npx playwright test tests/real-models.spec.js
         env:
           REAL_MODELS: "1"

@@ -15,6 +15,7 @@
       <header>
         <p class="eyebrow">ISOLATED EXPERIMENT • CPU / ONE THREAD</p>
         <h1>Speak once. Test locally.</h1>
+        <p>Long-recording benchmark · up to 5 minutes</p>
         <p>
           Transcribe the same saved recording with two small English models.
           Audio and transcripts stay in this tab.
@@ -67,7 +68,9 @@
         ><select id="duration">
           <option value="15">15 seconds</option>
           <option value="30">30 seconds</option>
-          <option value="60">60 seconds</option></select
+          <option value="60">60 seconds</option>
+          <option value="180">3 minutes</option>
+          <option value="300">5 minutes</option></select
         ><button id="record" class="microphone" aria-label="Record audio">
           🎙<span>Record</span>
         </button>
@@ -78,7 +81,8 @@
           <button id="stop" disabled>Stop recording</button
           ><button id="discard" disabled>Cancel recording</button>
         </div>
-        <label for="file">Or reuse a downloaded clip (up to 60 seconds)</label
+        <label for="file"
+          >Or reuse a downloaded clip (up to 5 minutes / 64 MB)</label
         ><input
           id="file"
           type="file"
@@ -97,9 +101,9 @@
         <h2>3. Transcribe the completed clip</h2>
         <p>
           The selected model receives decoded audio from the original clip,
-          never a new microphone stream. If a model is already loaded, stopping
-          recording automatically transcribes it. Switch models and run again to
-          compare.
+          never a new microphone stream. Stop preserves the full original
+          without starting transcription. Download it first, then press
+          Transcribe. Switch models and run again to compare.
         </p>
         <button id="run" disabled>Transcribe this clip locally</button
         ><button id="cancel" disabled>Cancel processing / unload model</button>
@@ -112,7 +116,9 @@
       <footer>
         Feasibility benchmark only. Not a change to Dual-Track Life Tracker.
         Tiny models can miss or invent words, especially in silence. Check every
-        transcript.
+        transcript, including its last sentence. Complete audio coverage does
+        not guarantee every word is recognized; words at chunk boundaries may be
+        missed.
       </footer>
     </main>
     <script type="module" src="/src/main.js"></script>

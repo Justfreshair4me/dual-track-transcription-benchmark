@@ -22,7 +22,7 @@ function wav(seconds) {
     );
   return b;
 }
-const workerCode = `let model;self.onmessage=({data})=>{if(data.type==='load'){model=data.model.id;setTimeout(()=>self.postMessage({type:'ready',milliseconds:123}),50);}else if(data.type==='run'){const samples=new Float32Array(data.samples);self.postMessage({type:'result',text:'Fictional '+model+' transcript. Samples '+samples.length,milliseconds:150});}};`;
+const workerCode = `let model;self.onmessage=({data})=>{if(data.type==='load'){model=data.model.id;setTimeout(()=>self.postMessage({type:'ready',milliseconds:123}),50);}else if(data.type==='run'){const samples=new Float32Array(data.samples);self.postMessage({type:'result',text:'Fictional '+model+' transcript. Samples '+samples.length,milliseconds:150,coverage:{totalSamples:samples.length,processedSamples:samples.length,completedChunks:1,totalChunks:1,ranges:[{startSample:0,endSample:samples.length,decoderEnded:true}]}});}};`;
 async function mock(page, code = workerCode) {
   await page.route(/\/assets\/worker-.*\.js$/, (route) =>
     route.fulfill({ contentType: "text/javascript", body: code }),
@@ -89,7 +89,7 @@ test("downloads require explicit confirmation", async ({ page }) => {
   expect(workerRequested).toBeFalsy();
   await expect(page.locator("#model-status")).not.toContainText("ready");
 });
-for (const seconds of [15, 30, 60])
+for (const seconds of [15, 30, 60, 180, 300])
   test(`${seconds}s same completed clip reused by both models, PCM length and playback preserved`, async ({
     page,
   }) => {
@@ -186,9 +186,9 @@ test("damaged and oversized imports do not replace existing audio", async ({
   await page.locator("#file").setInputFiles({
     name: "too-long.wav",
     mimeType: "audio/wav",
-    buffer: wav(65),
+    buffer: wav(305),
   });
-  await expect(page.locator("#status")).toContainText("60 seconds");
+  await expect(page.locator("#status")).toContainText("5 minutes");
   expect(await page.locator("#audio").getAttribute("src")).toBe(src);
 });
 test("real MediaRecorder captures once, downloads original, releases microphone", async ({
@@ -255,7 +255,7 @@ test("recording cancellation preserves previous clip", async ({ page }) => {
   await expect(page.locator("#status")).toContainText("canceled");
   expect(await page.locator("#audio").getAttribute("src")).toBe(src);
 });
-test("loaded model automatically transcribes stopped real recording", async ({
+test("loaded model waits after Stop so the original is downloadable before transcription", async ({
   page,
 }) => {
   await mock(page);
@@ -265,6 +265,13 @@ test("loaded model automatically transcribes stopped real recording", async ({
   await expect(page.locator("#stop")).toBeEnabled();
   await page.waitForTimeout(1100);
   await page.locator("#stop").click();
+  await expect(page.locator("#clip")).toBeVisible();
+  await expect(page.locator(".transcript")).toHaveCount(0);
+  await expect(page.locator("#save-audio")).toBeEnabled();
+  const download = page.waitForEvent("download");
+  await page.locator("#save-audio").click();
+  expect(fs.statSync(await (await download).path()).size).toBeGreaterThan(100);
+  await page.locator("#run").click();
   await expect(page.locator(".transcript")).toContainText("Fictional whisper");
   await expect(page.locator("#record-status")).toContainText(
     "Microphone released",
@@ -292,7 +299,7 @@ test("microphone permission failure offers import without damaging existing clip
   expect(await page.locator("#audio").getAttribute("src")).toBe(src);
   await expect(page.locator("#file")).toBeEnabled();
 });
-for (const seconds of [15, 30, 60]) {
+for (const seconds of [15, 30, 60, 180, 300]) {
   test(`automatic ${seconds}s recording stop with simulated clock releases microphone and retains clip`, async ({
     page,
   }) => {
@@ -342,3 +349,37 @@ for (const seconds of [15, 30, 60]) {
     await expect(page.locator("#record")).toBeEnabled();
   });
 }
+test("unverified tail coverage is rejected; original audio remains available", async ({
+  page,
+}) => {
+  await mock(
+    page,
+    `self.onmessage=({data})=>{if(data.type==='load')self.postMessage({type:'ready',milliseconds:1});else self.postMessage({type:'result',text:'not complete',milliseconds:2,coverage:{totalSamples:4800000,processedSamples:16000,completedChunks:1,totalChunks:20}});};`,
+  );
+  await open(page);
+  await clip(page, 300);
+  await load(page);
+  await page.locator("#run").click();
+  await expect(page.locator("#status")).toContainText(
+    "incomplete or unverified",
+  );
+  await expect(page.locator(".result")).toContainText("INCOMPLETE");
+  await expect(page.locator("#save-audio")).toBeEnabled();
+});
+test("manual Stop during five-minute selection preserves full received original before processing", async ({
+  page,
+}) => {
+  await mock(page);
+  await open(page);
+  await load(page);
+  await page.locator("#duration").selectOption("300");
+  await page.locator("#record").click();
+  await expect(page.locator("#stop")).toBeEnabled();
+  await page.waitForTimeout(1100);
+  await page.locator("#stop").click();
+  await expect(page.locator("#clip")).toBeVisible();
+  await expect(page.locator(".result")).toHaveCount(0);
+  await expect(page.locator("#save-audio")).toBeEnabled();
+  await page.locator("#run").click();
+  await expect(page.locator(".result")).toHaveCount(1);
+});
