@@ -12,7 +12,8 @@ _, tail = speech('tail', 'At the end, I drew a silver dragon. I put the silver d
 for seconds in [15, 30, 60, 180, 300]:
     byte_rate = params.framerate * params.nchannels * params.sampwidth
     target_bytes = (seconds * params.framerate + (441 if seconds == 300 else 0)) * params.nchannels * params.sampwidth
-    audio = bytearray((body * ((target_bytes + len(body) - 1) // len(body)))[:target_bytes]
+    repeated = body * ((target_bytes + len(body) - 1) // len(body))
+    audio = bytearray(repeated[:target_bytes])
     if len(audio) != target_bytes: raise RuntimeError('Synthetic body is too short')
     if seconds >= 180:
         # Markers lie inside interior/final chunks for both chunk sizes, not on boundaries.
