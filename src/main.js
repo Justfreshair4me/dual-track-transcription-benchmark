@@ -252,7 +252,7 @@ async function prepareAudio(blob) {
       throw new Error(
         "Browser did not provide the required 16 kHz decoding rate.",
       );
-    let samples = decoded.getChannelData(0);
+    let samples = decoded.getChannelData(0).slice();
     if (decoded.numberOfChannels > 1) {
       samples = new Float32Array(decoded.length);
       for (let c = 0; c < decoded.numberOfChannels; c++) {

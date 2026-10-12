@@ -67,9 +67,8 @@ if (process.env.REAL_MODELS === "1") {
         await expect(page.locator(".result")).toHaveCount(
           model === "whisper" ? 1 : 2,
         );
-        await expect(page.locator(".transcript").last()).toContainText(
-          /garden|flowers|book|birds|friend/i,
-        );
+        const transcript = await page.locator(".transcript").last().textContent();
+        expect(transcript, `Real ${model} at ${seconds}s must recognize fictional speech`).toMatch(/garden|flowers|book|birds|friend/i);
       }
       if (seconds >= 180)
         for (const transcript of await page
