@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { transcribeComplete } from "../src/transcribe.js";
 for (const model of ["whisper", "moonshine"])
-  for (const seconds of [180, 300.25]) {
+  for (const seconds of [180, 300.25, 300.0000625]) {
     test(`${model} covers every sample of ${seconds}s including final partial chunk`, async () => {
       const samples = new Float32Array(seconds * 16000);
       samples[samples.length - 1] = 0.75;
@@ -28,7 +28,7 @@ for (const model of ["whisper", "moonshine"])
           result.coverage.ranges[i - 1].endSample,
         );
       expect(result.text).toContain(
-        `segment ${Math.ceil(seconds / 15)}`,
+        `segment ${Math.ceil(seconds / 15) - (seconds % 15 > 0 && seconds % 15 < 1 ? 1 : 0)}`,
       );
     });
   }

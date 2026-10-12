@@ -15,7 +15,17 @@ export async function transcribeComplete(
       "Audio must be nonempty and no longer than five minutes (plus stop timing tolerance).",
     );
   const length = 15 * rate;
-  const totalChunks = Math.ceil(samples.length / length);
+  const spans = [];
+  for (let start = 0; start < samples.length; ) {
+    let end = Math.min(start + length, samples.length);
+    // Recording stop timers do not align exactly with PCM frames. Keep a tiny
+    // trailing fraction with the preceding span; never discard or infer it alone.
+    if (samples.length - end > 0 && samples.length - end < rate)
+      end = samples.length;
+    spans.push({ start, end });
+    start = end;
+  }
+  const totalChunks = spans.length;
   const ranges = [];
   let text = "";
   const coverage = () => ({
@@ -26,8 +36,7 @@ export async function transcribeComplete(
     ranges: [...ranges],
   });
   try {
-    for (let start = 0; start < samples.length; start += length) {
-      const end = Math.min(start + length, samples.length);
+    for (const { start, end } of spans) {
       let lastToken,
         calls = 0,
         generatedTokens = 0;

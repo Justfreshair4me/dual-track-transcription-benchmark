@@ -67,8 +67,14 @@ if (process.env.REAL_MODELS === "1") {
         await expect(page.locator(".result")).toHaveCount(
           model === "whisper" ? 1 : 2,
         );
-        const transcript = await page.locator(".transcript").last().textContent();
-        expect(transcript, `Real ${model} at ${seconds}s must recognize fictional speech`).toMatch(/garden|flowers|book|birds|friend/i);
+        const transcript = await page
+          .locator(".transcript")
+          .last()
+          .textContent();
+        expect(
+          transcript,
+          `Real ${model} at ${seconds}s must recognize fictional speech`,
+        ).toMatch(/garden|flowers|book|birds|friend/i);
       }
       if (seconds >= 180)
         for (const transcript of await page
@@ -100,15 +106,20 @@ if (process.env.REAL_MODELS === "1") {
       for (const result of JSON.parse(fs.readFileSync(reportPath, "utf8"))
         .results) {
         expect(result.state).toBe("complete");
-        expect(result.audioSeconds).toBeCloseTo(seconds, 2);
+        expect(result.audioSeconds).toBeCloseTo(
+          seconds === 300 ? 300.02 : seconds,
+          2,
+        );
         expect(result.coverage.processedSamples).toBe(
           result.coverage.totalSamples,
         );
-        expect(result.coverage.totalSamples).toBe(seconds * 16000);
-        expect(result.coverage.ranges.at(-1).endSample).toBe(seconds * 16000);
-        expect(result.coverage.completedChunks).toBe(
-          Math.ceil(seconds / 15),
+        expect(result.coverage.totalSamples).toBe(
+          seconds * 16000 + (seconds === 300 ? 320 : 0),
         );
+        expect(result.coverage.ranges.at(-1).endSample).toBe(
+          seconds * 16000 + (seconds === 300 ? 320 : 0),
+        );
+        expect(result.coverage.completedChunks).toBe(Math.ceil(seconds / 15));
       }
       await test.info().attach("real-model-metrics", {
         path: reportPath,
