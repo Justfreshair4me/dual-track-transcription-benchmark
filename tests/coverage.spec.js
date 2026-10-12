@@ -68,3 +68,14 @@ test("runtime failure near end cannot report full coverage", async () => {
     },
   });
 });
+test("even a forced end token at the output safety cap is rejected as incomplete", async () => {
+  const fake = async (input, options) => {
+    options.streamer.put([[1n]]);
+    for (let i = 0; i < 256; i++) options.streamer.put([[i === 255 ? 2n : 3n]]);
+    return { text: "capped" };
+  };
+  fake.model = { config: { eos_token_id: 2 } };
+  await expect(
+    transcribeComplete(fake, "moonshine", new Float32Array(16000)),
+  ).rejects.toThrow("Decoder output limit");
+});

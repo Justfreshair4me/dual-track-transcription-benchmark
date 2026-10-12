@@ -343,8 +343,14 @@ for (const seconds of [15, 30, 60, 180, 300]) {
     await expect(page.locator("#stop")).toBeEnabled();
     await page.clock.fastForward(seconds * 1000);
     await expect(page.locator("#clip-info")).toContainText(
-      `${seconds}.0 seconds`,
+      "seconds recorded (duration checked before inference)",
     );
+    const hint = Number(
+      (await page.locator("#clip-info").textContent()).match(
+        /~([\d.]+) seconds/,
+      )[1],
+    );
+    expect(Math.abs(hint - seconds)).toBeLessThan(1.5);
     expect(await page.evaluate(() => window.testTrackStopped)).toBeTruthy();
     await expect(page.locator("#record")).toBeEnabled();
   });
