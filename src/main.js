@@ -240,7 +240,7 @@ async function prepareAudio(blob) {
     throw new Error(
       "Clip is too large (64 MB maximum for transcription). Original is not truncated.",
     );
-  const context = new AudioContext({ sampleRate: 16000 });
+  const context = new AudioContext();
   try {
     const start = performance.now();
     const decoded = await context.decodeAudioData(await blob.arrayBuffer());
@@ -248,19 +248,17 @@ async function prepareAudio(blob) {
       throw new Error(
         "Use a clip between 0.2 seconds and 5 minutes. Original is not truncated.",
       );
-    if (decoded.sampleRate !== 16000)
-      throw new Error(
-        "Browser did not provide the required 16 kHz decoding rate.",
-      );
-    let samples = decoded.getChannelData(0).slice();
-    if (decoded.numberOfChannels > 1) {
-      samples = new Float32Array(decoded.length);
-      for (let c = 0; c < decoded.numberOfChannels; c++) {
-        const channel = decoded.getChannelData(c);
-        for (let i = 0; i < samples.length; i++)
-          samples[i] += channel[i] / decoded.numberOfChannels;
-      }
-    }
+    const offline = new OfflineAudioContext(
+      1,
+      Math.ceil(decoded.duration * 16000),
+      16000,
+    );
+    const source = offline.createBufferSource();
+    source.buffer = decoded;
+    source.connect(offline.destination);
+    source.start();
+    const rendered = await offline.startRendering();
+    const samples = rendered.getChannelData(0).slice();
     return { samples, milliseconds: performance.now() - start };
   } finally {
     await context.close();

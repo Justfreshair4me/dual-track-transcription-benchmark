@@ -46,9 +46,8 @@ export async function transcribeComplete(
         throw new Error("Cannot verify this model decoder completion.");
       const result = await transcriber(samples.subarray(start, end), {
         ...(modelId === "whisper"
-          ? { chunk_length_s: 0, return_timestamps: false }
-          : {}),
-        max_new_tokens: maxTokens,
+          ? { chunk_length_s: 30, stride_length_s: 5, return_timestamps: false }
+          : { max_new_tokens: maxTokens }),
         streamer,
       });
       const ended = (Array.isArray(eos) ? eos : [eos])
