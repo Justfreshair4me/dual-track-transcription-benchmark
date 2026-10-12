@@ -190,7 +190,7 @@ function addResult(data, state) {
     revision: loaded?.revision,
     state,
     error: data.error || data.message || null,
-    modelChunkSeconds: loaded?.id === "whisper" ? 30 : 15,
+    modelChunkSeconds: 15,
     clipId: clip.id,
     clipBytes: clip.blob.size,
     audioSeconds: pcm ? pcm.length / 16000 : clip.secondsHint,

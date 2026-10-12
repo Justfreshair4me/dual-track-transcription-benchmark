@@ -14,7 +14,7 @@ export async function transcribeComplete(
     throw new Error(
       "Audio must be nonempty and no longer than five minutes (plus stop timing tolerance).",
     );
-  const length = (modelId === "whisper" ? 30 : 15) * rate;
+  const length = 15 * rate;
   const totalChunks = Math.ceil(samples.length / length);
   const ranges = [];
   let text = "";

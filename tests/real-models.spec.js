@@ -107,7 +107,7 @@ if (process.env.REAL_MODELS === "1") {
         expect(result.coverage.totalSamples).toBe(seconds * 16000);
         expect(result.coverage.ranges.at(-1).endSample).toBe(seconds * 16000);
         expect(result.coverage.completedChunks).toBe(
-          Math.ceil(seconds / (result.model === "whisper" ? 30 : 15)),
+          Math.ceil(seconds / 15),
         );
       }
       await test.info().attach("real-model-metrics", {

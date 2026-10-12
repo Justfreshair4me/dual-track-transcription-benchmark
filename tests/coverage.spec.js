@@ -28,7 +28,7 @@ for (const model of ["whisper", "moonshine"])
           result.coverage.ranges[i - 1].endSample,
         );
       expect(result.text).toContain(
-        `segment ${Math.ceil(seconds / (model === "whisper" ? 30 : 15))}`,
+        `segment ${Math.ceil(seconds / 15)}`,
       );
     });
   }
