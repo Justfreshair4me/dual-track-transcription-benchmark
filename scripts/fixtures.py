@@ -8,7 +8,7 @@ def speech(name, text):
         return f.getparams(), f.readframes(f.getnframes())
 params, body = speech('body', 'Today I planted flowers in my garden. Then I read a book about birds. Tomorrow I will take a walk with my friend. This is a fictional test recording. ' * 15)
 _, middle = speech('middle', 'At the middle, I bought a purple lantern. I put the purple lantern in my tent.')
-_, tail = speech('tail', 'Silver dragon. Silver dragon. Silver dragon.')
+_, tail = speech('tail', 'At the end, I drew a silver dragon. I put the silver dragon in my notebook.')
 for seconds in [15, 30, 60, 180, 300]:
     byte_rate = params.framerate * params.nchannels * params.sampwidth
     audio = bytearray((body * ((seconds * byte_rate + len(body) - 1) // len(body)))[:seconds * byte_rate])
